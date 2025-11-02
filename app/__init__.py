@@ -1,6 +1,7 @@
 from flask import Flask
 
 from .config import Config
+from app.routes import routes
 
 def create_app() -> Flask:
     app = Flask(__name__)
@@ -14,5 +15,7 @@ def create_app() -> Flask:
     app.register_blueprint(health_bp)
     app.register_blueprint(loans_bp, url_prefix="/api")
     app.register_blueprint(stats_bp, url_prefix="/api")
+    
+    app.register_blueprint(routes)
 
     return app

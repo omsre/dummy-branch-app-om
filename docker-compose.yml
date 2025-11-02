@@ -1,33 +1,58 @@
+# docker-compose.yml
+
 services:
   db:
     image: postgres:16
+    restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: microloans
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-microloans}
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - db-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d microloans"]
-      interval: 5s
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
       timeout: 5s
-      retries: 10
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '${DB_CPU_LIMIT:-0.5}'
+          memory: '${DB_MEM_LIMIT:-512m}'
 
   api:
     build: .
-    environment:
-      FLASK_ENV: development
-      DATABASE_URL: postgresql+psycopg2://postgres:postgres@db:5432/microloans
-      PORT: 8000
-      PYTHONPATH: /app
     depends_on:
-      db:
-        condition: service_healthy
+      - db
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}}
+      FLASK_ENV: ${FLASK_ENV:-production}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
-      - "8000:8000"
-    command: gunicorn -w 2 -b 0.0.0.0:8000 wsgi:app
+      - "${API_PORT:-8000}:8000" # keep for direct access if needed
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    volumes:
+      - ./:/app:ro   # if you want code mounted for dev; change for prod
+    command: ["gunicorn", "-w", "4", "-b", "0.0.0.0:8000", "wsgi:app"]
+
+  nginx:
+    image: nginx:1.24
+    depends_on:
+      - api
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./infra/certs/branchloans.crt:/etc/ssl/certs/branchloans.crt:ro
+      - ./infra/certs/branchloans.key:/etc/ssl/private/branchloans.key:ro
+    restart: always
 
 volumes:
-  db_data:
+  db-data:
+
