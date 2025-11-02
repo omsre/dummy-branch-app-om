@@ -99,12 +99,14 @@ jobs:
           format: 'table'
           exit-code: '0'     # don't fail the pipeline on high vulns (you can change to '1' later)
           severity: 'CRITICAL,HIGH'
-
   push:
     if: github.ref == 'refs/heads/main'
     needs: [build, scan]
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4   # <— this ensures .git directory exists
+
       - name: Download built image artifact
         uses: actions/download-artifact@v4
         with:
