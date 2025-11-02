@@ -48,6 +48,8 @@ jobs:
   build:
     needs: test
     runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.build-image.outputs.image }}
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
@@ -58,20 +60,20 @@ jobs:
           SHA=$(git rev-parse --short HEAD)
           IMAGE=${{ env.IMAGE_NAME }}:${SHA}
           docker build -t $IMAGE .
-          # set step output (legacy set-output is still widely used)
-          echo "::set-output name=image::$IMAGE"
-
+          echo "image=$IMAGE" >> $GITHUB_OUTPUT
   scan:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Install Trivy and scan
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scan
         uses: aquasecurity/trivy-action@0.20.0
         with:
-          image-ref: ${{ needs.build.steps.build-image.outputs.image }}
+          image-ref: ${{ needs.build.outputs.image }}
           format: 'table'
-          exit-code: '1' # fail on critical/high
+          exit-code: '1'
           severity: 'CRITICAL,HIGH'
 
   push:
