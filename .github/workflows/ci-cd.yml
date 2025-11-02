@@ -45,7 +45,7 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           pytest -q
 
- build:
+  build:
     needs: test
     runs-on: ubuntu-latest
     outputs:
