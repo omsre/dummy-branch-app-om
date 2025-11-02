@@ -52,8 +52,10 @@ jobs:
       image: ${{ steps.build-image.outputs.image }}
     steps:
       - uses: actions/checkout@v4
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
       - name: Build image
         id: build-image
         run: |
@@ -61,12 +63,34 @@ jobs:
           IMAGE=${{ env.IMAGE_NAME }}:${SHA}
           docker build -t $IMAGE .
           echo "image=$IMAGE" >> $GITHUB_OUTPUT
+
+      - name: Save image as tarball
+        run: |
+          docker save ${{ env.IMAGE_NAME }}:${{ github.sha::7 }} -o image.tar
+        continue-on-error: true
+
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: built-image
+          path: image.tar
+
+
   scan:
     needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Download built image
+        uses: actions/download-artifact@v4
+        with:
+          name: built-image
+          path: .
+
+      - name: Load image
+        run: docker load -i image.tar
 
       - name: Run Trivy vulnerability scan
         uses: aquasecurity/trivy-action@0.20.0
@@ -75,6 +99,8 @@ jobs:
           format: 'table'
           exit-code: '1'
           severity: 'CRITICAL,HIGH'
+
+
 
   push:
     if: github.ref == 'refs/heads/main'   # only push for main
