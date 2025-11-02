@@ -97,8 +97,8 @@ jobs:
         with:
           image-ref: ${{ needs.build.outputs.image }}
           format: 'table'
-          exit-code: '0'     # don't fail the pipeline on high vulns (you can change to '1' later)
-          severity: 'CRITICAL,HIGH'
+          exit-code: '1'     # fail the pipeline on high vulns (you can change to '0' later)
+          severity: 'CRITICAL,HIGH' # to ignore critical&high vulns, and to run pipeline successfully make exit code to 0
   push:
     if: github.ref == 'refs/heads/main'
     needs: [build, scan]
