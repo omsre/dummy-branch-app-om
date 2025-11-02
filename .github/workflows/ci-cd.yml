@@ -45,7 +45,7 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           pytest -q
 
-  build:
+ build:
     needs: test
     runs-on: ubuntu-latest
     outputs:
@@ -59,23 +59,26 @@ jobs:
       - name: Build image
         id: build-image
         run: |
-          SHA=$(git rev-parse --short HEAD)
-          IMAGE=${{ env.IMAGE_NAME }}:${SHA}
+          # Use short SHA for tagging
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          IMAGE=${{ env.IMAGE_NAME }}:${SHORT_SHA}
+          echo "Building image: $IMAGE"
           docker build -t $IMAGE .
           echo "image=$IMAGE" >> $GITHUB_OUTPUT
 
       - name: Save image as tarball
         run: |
-          docker save ${{ env.IMAGE_NAME }}:${{ github.sha }} -o image.tar
-          ls -lh image.tar  # verify file exists
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          IMAGE=${{ env.IMAGE_NAME }}:${SHORT_SHA}
+          echo "Saving image $IMAGE to image.tar"
+          docker save $IMAGE -o image.tar
+          ls -lh image.tar
 
       - name: Upload image artifact
         uses: actions/upload-artifact@v4
         with:
           name: built-image
           path: image.tar
-
-
 
   scan:
     needs: build
