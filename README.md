@@ -1,8 +1,3 @@
-Perfect — this final **Part 4: Documentation** is where you pull together everything you built so far (local setup, Docker, CI/CD, etc.) into a clean, professional **`README.md`** for the assignment repo.
-
-Below is a **ready-to-use full documentation template**, customized for your project `dummy-branch-app-om` (Branch Loan API).
-You can copy this directly into your repo root as `README.md`.
-
 ---
 
 # 🏦 Branch Loan API — DevOps Take-Home Assignment
@@ -312,5 +307,3 @@ docker compose logs -f api
 ✅ Documentation with troubleshooting and design notes
 
 ---
-
-Would you like me to include a **diagram image (.png)** version of the ASCII architecture (which you can add under `docs/architecture.png` and reference in README)? I can generate that next for you.
